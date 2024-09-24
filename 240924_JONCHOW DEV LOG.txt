@@ -1,0 +1,374 @@
+Overview: Game Management (30 minutes)
+Focused on enhancing the game management functionality with the GameManager class:
+The game now starts automatically when the GameManager is initialized.
+Created StartGame method to log the game start and initialize game variables.
+Added EndGame method to reload the current scene when the game is over.
+Add debug to see if any system issues.
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class GameManager : MonoBehaviour
+{
+
+Game automatically starts 
+
+    private void Start()
+        //void means that the function will have no return value
+    {
+        StartGame(); // Automatically start the game when the GameManager is initialized
+
+
+    }
+
+Manages my game when it starts and ends. Debugs help me see the code is working.
+
+    public void StartGame()
+    {
+        Debug.Log("Game Started!");
+        // Initialize any game state or variables here if needed
+    }
+
+    public void EndGame()
+
+    {
+        Debug.Log("Game Over!");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); 
+        // Reload the current scene
+    }
+}
+
+
+
+
+Overview: Banana Movement Implementation (40 minutes)
+The Player “Banana” is supposed to dodge the blocks and weave through the space in between as long as possible.
+Developed the Banana script to control the movement and collision detection for the banana object in the game.
+Create a script that allows the player to move left and right.
+When a player gets hit by a block, the game automatically resets.
+Speed adjustment test of  player.
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Banana : MonoBehaviour
+// Can be publicy acessed by other scripts
+{
+    public float speed = 15.0f;
+    // Speed at which the object will move
+
+
+
+Added boundary instead of collider, makes the game more clean and easier to verify where problems are at.
+
+    public float boundary = 10.0f;
+    // Boundary for movement
+
+
+
+This part of the script allows the banana to move horizontally based on player input and includes boundaries to restrict movement.
+
+    private void Update()
+    // Update every frame
+    {
+        float moveInput = Input.GetAxis("Horizontal");
+        // Get input from the horizontal axis (default keys: A/D or Left/Right Arrow keys)
+
+        Vector3 movement = new Vector3(moveInput, 0, 0) * speed * Time.deltaTime;
+        // Calculate movement
+
+        transform.position += movement;
+        // Apply movement to the object's position
+
+        transform.position = new Vector3(Mathf.Clamp(transform.position.x, -boundary, boundary), transform.position.y, transform.position.z);
+        // Optional: Clamp position to stay within the boundary
+    }
+    private void OnCollisionEnter2D(Collision2D collision) 
+        // Corrected method name
+    {
+
+
+
+Interaction with the block with block spawner
+
+        if (collision.gameObject.CompareTag("Block"))
+        {
+            Debug.Log("Player has been hit by a Block!");
+            FindObjectOfType<GameManager>().EndGame(); 
+            // Call EndGame method
+        }
+
+    }
+}
+
+
+
+Overview: Block Spawner Implementation (1hr)
+Needed to add spawn points in the Unity Game engine to show which points to spawn at the necessary points 
+Created a block with 2D Block Collider and Rigid 2D body to interact so that it can interact with the player. 
+Made a block as a prefab and place it as a asset for the Block Spawner 
+Develop the BlockSpawner script to manage the spawning of blocks in the game.
+The script randomly selects spawn points for blocks and handles their removal once they fall below a certain threshold.
+Created an array of spawn points for block placement.
+Implemented a timer to control the interval between block spawns.
+Added functionality to automatically remove blocks that fall below a defined "dead zone," keeping the game environment clean.
+When blocks hit the player. The game immediately resets. 
+
+
+public class BlockSpawner : MonoBehaviour
+    // Other classes can use "BlockSpawner". Other scripts can interact with this.
+{
+  
+    public Transform[] spawnPoints;
+    // An array that holds multiple locations in the game where blocks can spawn
+
+    public GameObject blockPrefab;
+    // This prefab instantiates the block template
+
+    public float timeBetweenSpawn = 1f;
+    // The amount of time for blocks to spawn between new blocks
+
+    private float timeToSpawn = 2f;
+    // A timer that keeps track of when to spawn the next block.
+   
+    public float deadZone = -10;
+    // The deletion of blocks
+
+    private List<GameObject> spawnedBlocks = new List<GameObject>(); 
+    // List to track spawned blocks
+
+    
+    
+    
+    Need an update where it will spawn blocks as determined by update.
+
+    void Update()
+        // Runs every frame
+    {
+        if (Time.time >= timeToSpawn)
+            // Calls spawn blocks when to spawn the next blocks following the time set
+        {
+            // Check if blocks are spawning and the amount of time blocks take to spawn
+            SpawnBlocks();
+            timeToSpawn = Time.time + timeBetweenSpawn;
+        }
+
+        for (int i = spawnedBlocks.Count - 1; i >= 0; i--)
+            // Continues looping as long as i is not less than 0 (Player did not get hit)
+        {
+            if (spawnedBlocks[i].transform.position.y < deadZone)
+                // reaches the particuilar deadzone, in this the y axis
+            {
+                Destroy(spawnedBlocks[i]); 
+                // Destroy the block
+
+                spawnedBlocks.RemoveAt(i);  
+                // Remove from the list
+            }
+        }
+
+
+    The "deadzone" Need to destroy blocks so it doesn't over compute the computer, can refer to the flappy bird video (10 minutes)
+
+        if (transform.position.y < deadZone)
+        // Optionally destroy the spawner if it goes below the dead zone
+
+        {
+            Destroy(gameObject); // Destroy the spawner
+        }
+    }
+
+    Need a Block Spawner here, will create blocks at certain points and randomnise where it will skip. (20 minutes)
+
+    void SpawnBlocks()
+        //Spawns blocks 
+    {
+        int skipIndex = Random.Range(0, spawnPoints.Length);
+        //Generates an interger between 0 and the spawn points. Helps determine which spawn to skip when instantiating blocks.
+
+        for (int i = 0; i < spawnPoints.Length; i++)
+           // Loops spawnpoint 
+        {
+            if (i != skipIndex)
+                // Ensures that one spawnpoint will be "skipped" and blocks won't spawn there
+            {
+                GameObject newBlock = Instantiate(blockPrefab, spawnPoints[i].position, Quaternion.identity);
+                // Spawns a new block at a chosen point with no rotation
+                spawnedBlocks.Add(newBlock); 
+                // Add the block to the list
+
+
+
+
+
+
+
+
+
+Objectiive: Timer
+
+Create a Canvas in Unity to house the UI elements.
+Add a Text component to display the timer in MM:SSformat.
+Script Development:
+
+Develop the Game script to manage stopwatch functionality.
+Initialize the timer variable to track elapsed time.
+Implemente Update() method to increment the timer using Time.deltaTime.
+Timer Display:
+
+Created UpdateTimerText() method to format the timer and update the UI text display.
+Button Functionality:
+
+Connected buttons to script methods:
+Start Button: Resets the timer and starts counting.
+Stop Button: Added a boolean to control whether the timer is running (logic to be finalized).
+Reset Button: Resets the timer back to zero and updates the display.
+
+Entered Play mode to test stopwatch functionality.
+Verified that the timer starts, stops, and resets correctly upon button presses.
+Noted that stopping the timer needs further implementation for complete functionality.
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class Game : MonoBehaviour 
+{
+    private float timer;
+
+    [SerializeField] private Text stopwatchText; 
+    // Make sure to assign this in the Inspector
+
+    void Start()
+    {
+        timer = 0; 
+        // Initialize timer
+        UpdateTimerText();
+        // Update the UI text at the start
+    }
+
+    void Update()
+    {
+        timer += Time.deltaTime; 
+        // Increment timer by the time passed since the last frame
+        UpdateTimerText();
+        // Update the UI text
+    }
+
+    private void UpdateTimerText()
+    {
+        int minutes = Mathf.FloorToInt(timer / 60);
+        int seconds = Mathf.FloorToInt(timer % 60);
+        int milliseconds = Mathf.FloorToInt((timer * 100) % 100);
+        stopwatchText.text = string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, milliseconds);
+    }
+
+    public void StartStopwatch()
+    {
+        timer = 0; 
+        // Reset the timer
+        UpdateTimerText(); 
+        // Update the UI text
+    }
+
+    public void StopStopwatch()
+    {
+        // Optional: Logic to stop the timer if needed
+    }
+
+    public void ResetStopwatch()
+    {
+        timer = 0;
+        // Reset the timer
+        UpdateTimerText();
+        // Update the UI text
+    }
+}
+
+
+--------------------------------------------------------------------------------------
+
+
+Animation.
+
+Create an animation where the character will look left and right.
+Create an idle animation when character does not move.
+Give character a 2D RigidBody 
+Create a 2D Collider to interact with collider when hit by the block.
+Update code so that the character will face left and right depending on key pressed
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Yellow : MonoBehaviour
+{
+    public float speed = 5.0f;
+    public float boundary = 10.0f;
+
+    private Animator animator = null;
+
+    private void Start()
+    {
+        // Get the Animator component attached to the same GameObject
+        animator = GetComponent<Animator>();
+    }
+
+    private void Update()
+    {
+        float moveInput = Input.GetAxis("Horizontal");
+
+        // Calculate movement
+        Vector3 movement = new Vector3(moveInput, 0, 0) * speed * Time.deltaTime;
+
+        // Apply movement to the object's position
+        transform.position += movement;
+
+        // Clamp position to stay within the boundary
+        transform.position = new Vector3(Mathf.Clamp(transform.position.x, -boundary, boundary), transform.position.y, transform.position.z);
+
+        // Update animator parameter based on movement input
+        if (moveInput != 0)
+        {
+            animator.SetBool("IsRunning", true);
+
+            // Flip character based on movement direction
+            if (moveInput > 0)
+            {
+                // Facing right
+                transform.localScale = new Vector3(1, 1, 1);
+            }
+            else
+            {
+                // Facing left
+                transform.localScale = new Vector3(-1, 1, 1);
+            }
+        }
+        else
+        {
+            animator.SetBool("IsRunning", false);
+            // Idle animation if character is not running 
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Block"))
+        {
+            Debug.Log("Player has been hit by a Block!");
+            FindObjectOfType<GameManager>().EndGame();
+        }
+    }
+}
+
+New code updated;
+
+Put in a new animation input where now it will flip left and right depending on where the player is facing.
+Running speed updated, due to characters bigger hit box. Character now runs faster.
+Idle animation, character body bounces up and down along with the eyes.
+Running animation, character runs moving left and right body bounces and eyes move up 
+When hit by block, block will have bounce of character, ending the game.
